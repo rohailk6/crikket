@@ -9,6 +9,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core"
 import { organization, user } from "./auth"
+import { project } from "./project"
 
 export const bugReport = pgTable(
   "bug_report",
@@ -17,6 +18,7 @@ export const bugReport = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
+    projectId: text("project_id").references(() => project.id),
     reporterId: text("reporter_id").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -63,6 +65,7 @@ export const bugReport = pgTable(
     index("bug_report_debuggerIngestionStatus_idx").on(
       table.debuggerIngestionStatus
     ),
+    index("bug_report_projectId_idx").on(table.projectId),
   ]
 )
 
@@ -73,6 +76,7 @@ export const bugReportUploadSession = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
+    projectId: text("project_id").references(() => project.id),
     reporterId: text("reporter_id").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -100,6 +104,7 @@ export const bugReportUploadSession = pgTable(
       table.organizationId
     ),
     index("bug_report_upload_session_expiresAt_idx").on(table.expiresAt),
+    index("bug_report_upload_session_projectId_idx").on(table.projectId),
   ]
 )
 
@@ -215,6 +220,7 @@ export const capturePublicKey = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
+    projectId: text("project_id").references(() => project.id),
     key: text("key").notNull().unique(),
     label: text("label").notNull(),
     allowedOrigins: text("allowed_origins")
@@ -236,6 +242,7 @@ export const capturePublicKey = pgTable(
   (table) => [
     index("capture_public_key_organizationId_idx").on(table.organizationId),
     index("capture_public_key_status_idx").on(table.status),
+    index("capture_public_key_projectId_idx").on(table.projectId),
   ]
 )
 
@@ -243,6 +250,10 @@ export const bugReportRelations = relations(bugReport, ({ one, many }) => ({
   organization: one(organization, {
     fields: [bugReport.organizationId],
     references: [organization.id],
+  }),
+  project: one(project, {
+    fields: [bugReport.projectId],
+    references: [project.id],
   }),
   reporter: one(user, {
     fields: [bugReport.reporterId],
@@ -290,6 +301,10 @@ export const capturePublicKeyRelations = relations(
     organization: one(organization, {
       fields: [capturePublicKey.organizationId],
       references: [organization.id],
+    }),
+    project: one(project, {
+      fields: [capturePublicKey.projectId],
+      references: [project.id],
     }),
     creator: one(user, {
       fields: [capturePublicKey.createdBy],
